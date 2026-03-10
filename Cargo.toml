@@ -10,7 +10,7 @@ ash = {version = "0.38", default-features = false, features = ["debug"]}
 log = {version = "0.4"}
 env_logger = "0.11.0"
 thiserror = "1.0.64"
-vk-profiles-rs = "0.3.1"
+vk-profiles-rs = { git = "https://github.com/zzstar17/vk-profiles-rs" }
 
 [features]
 "default" = ["load", "vl", "graphics_family", "compute_family", "transfer_family"]
