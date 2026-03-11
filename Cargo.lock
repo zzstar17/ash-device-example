@@ -342,7 +342,7 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 [[package]]
 name = "vk-profiles-rs"
 version = "0.4.0"
-source = "git+https://github.com/zzstar17/vk-profiles-rs#da3f4ecb474234c99be00e812be8e6c6806d681d"
+source = "git+https://github.com/zzstar17/vk-profiles-rs#1e4a45c750c96f7cccddf9da4892d3b7f42a88ef"
 dependencies = [
  "ash",
  "cmake",

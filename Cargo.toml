@@ -6,16 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ash = {version = "0.38", default-features = false, features = ["debug"]}
+ash = {version = "0.38", default-features = false, features = ["debug", "linked"]}
 log = {version = "0.4"}
 env_logger = "0.11.0"
 thiserror = "1.0.64"
 vk-profiles-rs = { git = "https://github.com/zzstar17/vk-profiles-rs" }
 
 [features]
-"default" = ["load", "vl", "graphics_family", "compute_family", "transfer_family"]
-"load" = ["ash/loaded"]
-"link" = ["ash/linked"]
+"default" = ["vl", "graphics_family", "compute_family", "transfer_family"]
 "vl" = []
 "graphics_family" = []
 "compute_family" = []

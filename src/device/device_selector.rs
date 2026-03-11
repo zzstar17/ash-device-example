@@ -57,8 +57,8 @@ pub unsafe fn select_physical_device(
 ) -> Result<
   Option<(
     vk::PhysicalDevice,
-    PhysicalDeviceProperties,
-    PhysicalDeviceFeatures,
+    PhysicalDeviceProperties<'_>,
+    PhysicalDeviceFeatures<'_>,
     QueueFamilies,
   )>,
   DeviceSelectionError,

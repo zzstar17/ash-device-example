@@ -1,5 +1,4 @@
 mod device;
-mod entry;
 mod errors;
 mod instance;
 mod utility;
@@ -14,6 +13,7 @@ use instance::InstanceCreationError;
 use std::ffi::CStr;
 #[cfg(feature = "vl")]
 use validation_layers::DebugUtilsMarker;
+use vk_profiles_rs::{profiles, vp};
 
 use crate::device::{Device, PhysicalDevice};
 
@@ -30,7 +30,10 @@ const ADDITIONAL_VALIDATION_FEATURES: [vk::ValidationFeatureEnableEXT; 2] = [
 // You may have to use an older API version if you want to support devices that do not yet support
 // the recent versions. You can see in the documentation what is the minimum supported version
 // for each extension, feature or API call.
-const TARGET_API_VERSION: u32 = vk::API_VERSION_1_3;
+// Warning: must be at equal or higher than all profile min_api_version
+const TARGET_API_VERSION: u32 = profiles::KhrRoadmap2024::MIN_API_VERSION;
+const VULKAN_PROFILES: [vp::ProfileProperties; 1] =
+  [profiles::KhrRoadmap2024::profile_properties()];
 
 // somewhat arbitrary
 static APPLICATION_NAME: &CStr = c"Vulkan Device Creation";
@@ -55,12 +58,13 @@ fn run_app() -> Result<(), ApplicationError> {
   #[cfg(not(feature = "vl"))]
   env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
-  let entry: ash::Entry = unsafe { entry::get_entry() };
+  let entry: ash::Entry = ash::Entry::linked();
+  let vp_entry = vk_profiles_rs::VulkanProfiles::linked();
 
   #[cfg(feature = "vl")]
-  let (instance, mut debug_utils) = instance::create_instance(&entry)?;
+  let (instance, mut debug_utils) = instance::create_instance(&entry, &vp_entry, &VULKAN_PROFILES)?;
   #[cfg(not(feature = "vl"))]
-  let instance = instance::create_instance(&entry)?;
+  let instance = instance::create_instance(&entry, &vp_entry, &VULKAN_PROFILES)?;
 
   let physical_device = match unsafe { PhysicalDevice::select(&instance)? } {
     Some(device) => device,
@@ -69,7 +73,8 @@ fn run_app() -> Result<(), ApplicationError> {
     }
   };
 
-  let (logical_device, queues) = Device::create(&instance, &physical_device)?;
+  let (logical_device, queues) =
+    Device::create(&instance, &physical_device, &vp_entry, &VULKAN_PROFILES)?;
 
   #[cfg(feature = "vl")]
   let debug_marker = DebugUtilsMarker::new(&instance, &logical_device);
@@ -100,7 +105,7 @@ fn run_app() -> Result<(), ApplicationError> {
 
 fn main() {
   if let Err(err) = run_app() {
-    eprintln!("An urecoverable error occurred:\n    {}", err);
+    eprintln!("An unrecoverable error occurred:\n    {}", err);
     std::process::exit(1);
   }
 }

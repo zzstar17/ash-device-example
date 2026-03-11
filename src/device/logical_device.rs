@@ -6,6 +6,7 @@ use std::{
   os::raw::c_void,
   ptr::{self},
 };
+use vk_profiles_rs::{vp, VulkanProfiles};
 
 use crate::{device::queues::Queue, errors::OutOfMemoryError};
 
@@ -41,6 +42,8 @@ impl Device {
   pub fn create(
     instance: &ash::Instance,
     physical_device: &PhysicalDevice,
+    vp_entry: &VulkanProfiles,
+    profiles: &[vp::ProfileProperties],
   ) -> Result<(Self, SingleQueues), DeviceCreationError> {
     let (queue_create_infos, unique_queue_size) =
       super::queues::get_single_queue_create_infos(&physical_device.queue_families);
@@ -66,7 +69,6 @@ impl Device {
     };
 
     features12.p_next = &mut features13 as *mut vk::PhysicalDeviceVulkan13Features as *mut c_void;
-    features13.p_next = ptr::null_mut();
 
     #[allow(deprecated)]
     let create_info = vk::DeviceCreateInfo {
@@ -82,10 +84,15 @@ impl Device {
       flags: vk::DeviceCreateFlags::empty(),
       _marker: PhantomData,
     };
+    let vp_create_info = vp::DeviceCreateInfo::default()
+      .create_info(&create_info)
+      .enabled_full_profiles(profiles)
+      .flags(vp::DeviceCreateFlagBits::DISABLE_ROBUST_ACCESS);
+
     log::debug!("Creating logical device");
     let device: ash::Device =
-      unsafe { instance.create_device(**physical_device, &create_info, None) }.map_err(
-        |vkerr| match vkerr {
+      unsafe { vp_entry.create_device(instance, **physical_device, &vp_create_info, None) }
+        .map_err(|vkerr| match vkerr {
           vk::Result::ERROR_OUT_OF_HOST_MEMORY | vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => {
             DeviceCreationError::OutOfMemory(vkerr.into())
           }
@@ -94,8 +101,7 @@ impl Device {
           }
           vk::Result::ERROR_DEVICE_LOST => DeviceCreationError::DeviceLost,
           _ => panic!("Unhandled device creation error: {:?}", vkerr),
-        },
-      )?;
+        })?;
 
     let queues = unsafe {
       let queue_create_infos = &queue_create_infos[0..unique_queue_size];
